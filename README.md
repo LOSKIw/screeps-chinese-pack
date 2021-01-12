@@ -1,6 +1,12 @@
 # Screeps-chinese-pack
 
-用于汉化 [screeps.com](https://screeps.com) 网站的 [油猴脚本](https://www.tampermonkey.net/)。由 Screeps 中国玩家自发创建并维护，[点此](./CONTRIBUTING.md) 来查看如何参与本项目！
+![build badge](https://github.com/screeps-cn/screeps-chinese-pack/workflows/BUILD/badge.svg)
+![Base on](https://img.shields.io/badge/Base%20on-Tampermonkey-blue)
+
+用于汉化 [screeps.com](https://screeps.com) 网站的 [油猴脚本](https://www.tampermonkey.net/)。由 Screeps 中国玩家自发创建并维护。[点此](./CONTRIBUTING.md) 来查看如何参与本项目！
+
+本脚本发布于 **[greasyfork - screeps-chinese-pack](https://greasyfork.org/zh-CN/scripts/416651-screeps-chinese-pack)**，
+安装请参照 [installing-user-scripts](https://greasyfork.org/zh-CN/help/installing-user-scripts)。
 
 # 需求
 
@@ -18,7 +24,7 @@ yarn install
 
 ## 本地开发
 
-访问 `edge://extensions` 或 `chrome://extensions` 将 Tampermonkey 设置为 **允许访问文件 URL**。
+在浏览器地址栏中输入 `edge://extensions` 或 `chrome://extensions` 并在 Tampermonkey 的详细信息中勾选 **允许访问文件 URL**。
 
 在项目目录中执行如下命令，将会在同目录下生成 `dist/main.js` 文件。
 
@@ -30,7 +36,7 @@ yarn start
 
 ```js
 // ==UserScript==
-// @name         screeps-chinese-pack
+// @name         screeps-chinese-pack-dev
 // @match        https://screeps.com/*
 // @require      file://e:\project\screeps-chinese-pack\dist\main.js
 // ==/UserScript==

@@ -1,7 +1,43 @@
 import { TRANSLATE_FROM, TRANSLATE_TO } from 'setting'
 import { contentCache, getContent, updateContent } from 'storage'
-import { getContentElement, isHTMLElement, trim } from 'utils'
+import { isExceptElement, isHTMLElement, isText, trim } from 'utils'
 
+
+/**
+ * 递归获取该元素下所有包含内容的 text 元素
+ * 
+ * @param el 要进行查询的 html 节点
+ * @return 包含内容的 text 元素数组
+ */
+const getContentElement = function (el: Node): Text[] {
+    if (isHTMLElement(el)) {
+        // 该元素被禁止翻译了就跳过
+        if (el.stopTranslateSearch) return []
+        const contentElement: Text[] = []
+
+        // 遍历所有子节点递归拿到内容节点
+        for (let i = 0; i < el.childNodes.length; i += 1) {
+            const children = el.childNodes[i]
+
+            if (children.nodeType === Node.TEXT_NODE) {
+                // Text 节点中有很多只有换行符或者空格的，这里将其剔除掉
+                // 正则含义：包含除“换行”“回车”“空格”以外的其他字符
+                if (!/[^(\n|\r| )]/g.test((children as Text).wholeText)) continue
+                contentElement.push(children as Text)
+            }
+            // 元素节点的话就递归继续获取（不会搜索 script 标签）
+            else if (isHTMLElement(children) && children.nodeName !== 'SCRIPT') {
+                contentElement.push(...getContentElement(children))
+            }
+        }
+
+        return contentElement
+    }
+    // 如果是文本节点的话就直接返回
+    if (isText(el)) return [el]
+
+    return []
+}
 
 /**
  * 使用对应的翻译内容更新 html 元素
@@ -82,8 +118,6 @@ const updateText = function (el: Text, content: TranslationContent): void {
 /**
  * 翻译所有带选择器的内容
  * 
- * 会给匹配到的元素加上 stopTranslateSearch 标识以阻止后续重复翻译
- * 
  * @param el 要翻译的 html 元素
  * @param allQueryContents 所有包含选择器的翻译项
  */
@@ -95,7 +129,7 @@ const translateQueryContent = function (allQueryContents: TranslationContent[]):
 
         // 翻译并阻止后续再次翻译
         targetElements.forEach((element, index) => {
-            if (!isHTMLElement(element)) return
+            if (!isHTMLElement(element) || isExceptElement(element)) return
             const cacheKey = content.selector + index
             // 如果元素的内容没有发生变更，就不执行更新
             const preContent = contentCache.get(cacheKey)
@@ -107,7 +141,6 @@ const translateQueryContent = function (allQueryContents: TranslationContent[]):
 
             // 更新缓存并阻止后续翻译
             contentCache.set(cacheKey, newContent)
-            element.stopTranslateSearch = true
         })
 
         return content.reuse
@@ -125,6 +158,7 @@ const translateQueryContent = function (allQueryContents: TranslationContent[]):
  * @param allContents 所有不带选择器的翻译内容
  */
 const translateNormalContent = function (el: Node, allContents: TranslationContent[]): TranslationContent[] {
+    if (isExceptElement(el)) return allContents
     // 取出所有待翻译元素
     const needTranslateText = getContentElement(el)
 
@@ -184,14 +218,13 @@ const translate = function (changedNode: Node[]): void {
     // 有选择器的内容每次变更只会被翻译一次
     const nextSearchdQueryContents = translateQueryContent(allQueryContents)
     updateContent({ queryContent: nextSearchdQueryContents })
-    // 文本内容每个都会被执行翻译
 
+    // 文本内容每个都会被执行翻译
     for (const node of changedNode) {
         const nextSearchContents = translateNormalContent(node, allContents)
         // 把没有使用或者启用了重用的翻译内容更新回数据源
         updateContent({ content: nextSearchContents })
     }
 }
-
 
 export default translate
